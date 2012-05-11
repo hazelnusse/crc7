@@ -1,5 +1,7 @@
 #include <iostream>
 #include <cstdint>
+#include <vector>
+#include <array>
 
 uint8_t CRCTable[256];
  
@@ -37,13 +39,27 @@ uint8_t getCRC(uint8_t message[], int length)
   return CRC;
 }
 
+void PrintFrame(std::array<uint8_t, 6> & f)
+{
+  for (auto e : f)
+    std::cout << std::hex << (int) e << " ";
+  std::cout << std::endl;
+}
+
 int main()
 {
-  // This is CMD8(0x1AA) from the SD card spec for probing acceptable operating
-  // voltages
-  uint8_t data[6] = {0x48, 0, 0, 1, 0xAA, 0};
   GenerateCRCTable();
-  data[5] = ((getCRC(data, 5) << 1) | 1);
-  std::cout << std::hex << "0x" << (int) data[5] << std::endl;
-  std::cout << std::dec << (int) data[5] << std::endl;
+
+  std::vector<std::array<uint8_t, 6>> CommandFrames;
+  CommandFrames.push_back({{0x40, 0, 0, 0, 0, 0}});
+  CommandFrames.push_back({{0x48, 0, 0, 1, 0xAA, 0}});
+  CommandFrames.push_back({{0x69, 0x40, 0, 0, 0, 0}});
+  CommandFrames.push_back({{0x77, 0x00, 0, 0, 0, 0}});
+  CommandFrames.push_back({{0x7A, 0x00, 0, 0, 0, 0}});
+
+  std::cout << "Command, Argument, CRC7" << std::endl;
+  for (auto &Frame : CommandFrames) {
+    Frame[5] = (getCRC(Frame.data(), 5) << 1) | 1;
+    PrintFrame(Frame);
+  }
 }
